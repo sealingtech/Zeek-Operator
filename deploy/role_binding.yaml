@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: zeek-operator
+subjects:
+- kind: ServiceAccount
+  name: zeek-operator
+roleRef:
+  kind: Role
+  name: zeek-operator
+  apiGroup: rbac.authorization.k8s.io

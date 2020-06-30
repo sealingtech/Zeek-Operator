@@ -1,0 +1,36 @@
+---
+# tasks file for zeek
+- name: Create Zeek Dashboard
+  k8s:
+    state: present
+    definition: "{{ lookup('template', './zeek-dashboard.yaml.j2') }}"
+- name: Create Zeek etc config
+  k8s: 
+    state: present
+    definition: "{{ lookup('template', './zeek-etc-config.yaml.j2') }}"
+- name: Create Zeek site config
+  k8s:
+    state: present
+    definition: "{{ lookup('template', './zeek-site-config.yaml.j2') }}"
+- name: Create Zeek Filebeat config
+  k8s:
+    state: present
+    definition: "{{ lookup('template', './filebeat-zeek-config.yaml.j2') }}"
+- name: Create Zeek Ingest Job
+  k8s:
+    state: present
+    definition: "{{ lookup('template', './ingest-zeek-init-job.yaml.j2') }}"
+- name: Create Logstash Zeek config
+  k8s:
+    state: present
+    definition: "{{ lookup('template', './logstash-zeek-config.yaml.j2') }}"
+- name: Create Logstash Zeek Pipeline
+  k8s:
+    state: present
+    definition: "{{ lookup('template', './logstash-zeek-pipeline.yaml.j2') }}"
+-
+- name: Create Zeek Daemonset
+  k8s: 
+    state: present
+    definition: "{{ lookup('template', './zeek-daemonset.yaml.j2') }}"
+

@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ zeek.fullname }}
+  namespace: {{zeek.namespace}}
+  labels:
+    app: {{ zeek.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ zeek.name }}
+  template:
+    metadata:
+      name: {{ zeek.name }}
+      labels:
+        app: {{ zeek.name }}
+      annotations:
+        networks: '[
+	{% if networks.useHostNetworking == true %}
+	  {"name": {{networks.overlay}} }
+	{% else %}
+	  {"name": {{networks.overlay}},
+	   "name": {{networks.passive}} }
+	{% endif %}
+      ]'
+    spec:
+     # hostNetwork: true
+     # dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+      - name: verifynode
+        image: {{ images.runner }}
+        env:
+        - name: INTERFACE
+          valueFrom:
+            secretKeyRef:
+              name: passive-interface
+              key: interface
+        - name: STARTUP_SCRIPT
+          value: |
+            #!/bin/bash
+            set -e
+            sleep 10
+            if [ ! -f /sys/class/net/$INTERFACE/operstate ]; then
+            echo "Network interface '$INTERFACE' not found, exiting..."
+            exit 1
+            fi
+      containers:
+      - name: zeek
+        image: {{ images.zeek }}
+        imagePullPolicy: Always
+        command: ["bash", "-c", "cp /tmp/zeek/* /usr/local/zeek/etc/ && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+        securityContext:
+          runAsUser: 2001
+          fsGroup: 2001
+          capabilities:
+            add:
+              - NET_ADMIN 
+              - SYS_NICE #Used for CPU pinning
+              - NET_RAW
+        env: 
+        - name: INTERFACE
+          valueFrom:
+            secretKeyRef:
+              name: passive-interface
+              key: interface
+        resources:
+          requests:
+            cpu: "{{ zeekConfig.requests.cpu }}"
+            memory: "{{ zeekConfig.requests.memory }}"  
+          limits:
+            cpu: "{{ zeekConfig.limits.cpu }}"
+            memory: "{{ zeekConfig.limits.memory }}"
+        volumeMounts:
+        - mountPath: /usr/local/zeek/logs/
+          name: zeek-logs 
+        - mountPath: /tmp/zeek/
+          name: zeek-etc-config 
+        - mountPath: /usr/local/zeek/share/zeek/site/local.zeek
+          name: zeek-site-config 
+          subPath: local.zeek
+        - mountPath: /usr/local/zeek/spool/
+          name: zeek-spool
+      
+      - name: redis
+        image: {{ images.redis }}
+        imagePullPolicy: Always
+        ports:
+        - name: cport-6379
+          containerPort: 6379
+        resources:
+          requests:
+            cpu: "{{ redisConfig.requests.cpu }}"
+            memory: "{{ redisConfig.requests.memory }}"
+          limits:
+            cpu: "{{ redisConfig.limits.cpu }}"
+            memory: "{{ redisConfig.limits.memory }}"
+          
+      - name: logstash
+        image: {{ images.logstash }}
+        imagePullPolicy: Always
+        ports:
+        - name: cport-5044
+          containerPort: 5044
+        resources:
+          requests:
+            cpu: "{{ logstashConfig.requests.cpu }}"
+            memory: "{{ logstashConfig.requests.memory }}"
+          limits:
+            cpu: "{{ logstashConfig.limits.cpu }}"
+            memory: "{{ logstashConfig.limits.memory }}"
+        volumeMounts:
+        - mountPath: /usr/share/logstash/pipeline/
+          name: logstash-zeek-pipeline
+        - mountPath: /usr/share/logstash/config/
+          name: logstash-zeek-config
+
+      - name: filebeat
+        image: {{ images.filebeat }}
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /zeek/
+          name: zeek-spool
+        - mountPath: /usr/share/filebeat/filebeat.yml
+          subPath: filebeat.yml
+          name: filebeat-zeek-config
+          
+      volumes:
+      - name: zeek-logs
+        emptyDir: 
+          medium: "Memory" 
+      - name: zeek-spool
+        emptyDir:     
+          medium: "Memory"
+      - name: zeek-etc-config
+        configMap:
+          name: {{ zeek.fullname }}-etc-config
+      - name: zeek-site-config
+        configMap:
+          name: {{ zeek.fullname }}-site-config
+      - name: filebeat-zeek-config
+        configMap:
+          name: {{ zeek.fullname }}-filebeat-config
+      - name: logstash-zeek-config
+        configMap:
+          name: logstash-{{ zeek.fullname }}-config
+      - name: logstash-zeek-pipeline
+        configMap:
+          name: logstash-{{ zeek.fullname }}-pipeline
+          
+      restartPolicy: Always
+      #nodeSelector:
+        #{{ nodeSelector.label }} : "true"

@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ zeek.fullname }}-dashboards-runner
+  namespace: {{ zeek.namespace}}
+  labels:
+    app: {{zeek.name}}
+spec:
+  template:
+    metadata:
+      name: zeek-dashboards-runner
+      annotations:
+        "helm.sh/hook": "pre-install"  # Run before all other services start
+    spec:
+      containers:
+      - name: dashboards-runner
+        image: miked235/elk-runner
+        imagePullPolicy: Always
+        env:
+        - name: KIBANA
+          value: "kibana-service:5601"
+        volumeMounts:
+        - name: dashboards
+          mountPath: /etc/dashboards
+      volumes:
+      - name: dashboards
+        configMap:
+          name: {{ zeek.fullname }}-dashboards
+      restartPolicy: OnFailure

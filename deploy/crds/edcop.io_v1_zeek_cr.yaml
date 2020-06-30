@@ -1,0 +1,8 @@
+apiVersion: edcop.io/v1
+kind: Zeek
+metadata:
+  name: example-zeek
+spec:
+  # Add fields here
+  size: 3
+  #fullname: "trial"
