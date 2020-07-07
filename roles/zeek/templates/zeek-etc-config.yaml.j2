@@ -167,3 +167,7 @@ data:
     type=worker
     host=localhost
     interface=af_packet::${INTERFACE}
+    {% if zeekConfig.setCpuAffinity %}lb_method=custom
+    lb_procs={{zeekConfig.lbProcs}}
+    pin_cpus={{zeekConfig.pinCpus}}
+    {% endif %}
