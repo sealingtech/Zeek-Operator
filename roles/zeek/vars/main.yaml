@@ -2,7 +2,7 @@
 
 zeek:
   name: zeek
-  fullname: zeek-long-name-here
+  fullname: zeek-fullname
   namespace: default
 metadata:
   release: 0.1
@@ -10,7 +10,7 @@ metadata:
   home: https://github.com/sealingtech.com
   icon: https://zeek.org/cropped-bro-circular-webpage.png
 images:
-  zeek: gcr.io/edcop-dev/mike-bro:5
+  zeek: gcr.io/edcop-dev/mbaker-zeek:v3.1.3
   logstash: docker.elastic.co/logstash/logstash:6.4.2
   redis: redis:4.0.9
   filebeat: docker.elastic.co/beats/filebeat:6.4.2
