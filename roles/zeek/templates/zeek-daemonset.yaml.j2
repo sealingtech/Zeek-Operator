@@ -24,8 +24,8 @@ spec:
 	{% endif %}
       ]'
     spec:
-     # hostNetwork: true
-     # dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       initContainers:
       - name: verifynode
         image: {{ images.runner }}
