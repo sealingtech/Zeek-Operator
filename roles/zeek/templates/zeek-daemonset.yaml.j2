@@ -50,8 +50,9 @@ spec:
         imagePullPolicy: Always
         command: ["bash", "-c", "cp /tmp/zeek/* /usr/local/zeek/etc/ && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
         securityContext:
-          runAsUser: 2001
-          fsGroup: 2001
+          runAsUser: 0 
+          fsGroup: 0  
+          privileged: true
           capabilities:
             add:
               - NET_ADMIN 
@@ -148,5 +149,5 @@ spec:
           name: logstash-{{ zeek.fullname }}-pipeline
           
       restartPolicy: Always
-      #nodeSelector:
-        #{{ nodeSelector.label }} : "true"
+      nodeSelector:
+        {{ nodeSelector.label }} : "true"
